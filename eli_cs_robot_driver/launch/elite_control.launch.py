@@ -7,6 +7,7 @@ from launch.actions import DeclareLaunchArgument, OpaqueFunction
 from launch.conditions import IfCondition, UnlessCondition
 from launch.substitutions import Command, FindExecutable, LaunchConfiguration, PathJoinSubstitution
 
+from moveit_studio_utils_py.system_config import SystemConfigParser
 
 def launch_setup(context, *args, **kwargs):
 
@@ -40,6 +41,8 @@ def launch_setup(context, *args, **kwargs):
     reverse_port = LaunchConfiguration("reverse_port")
     script_sender_port = LaunchConfiguration("script_sender_port")
     trajectory_port = LaunchConfiguration("trajectory_port")
+    parent = LaunchConfiguration("parent")
+    custom_xacro_path = LaunchConfiguration("custom_xacro_path")
 
     joint_limit_params = PathJoinSubstitution(
         [FindPackageShare(description_package), "config", cs_type, "joint_limits.yaml"]
@@ -63,11 +66,19 @@ def launch_setup(context, *args, **kwargs):
         [FindPackageShare("eli_cs_robot_driver"), "resources", "output_recipe.txt"]
     )
 
+    robot_description_file = None
+    if (custom_xacro_path == ""):
+        robot_description_file = [FindPackageShare(description_package), "urdf", description_file]
+    else:
+        custom_xacro_value = custom_xacro_path.perform(context)
+        pkg_name, rel_path = custom_xacro_value.split("/", 1)
+        robot_description_file = [FindPackageShare(pkg_name), rel_path]
+
     robot_description_content = Command(
         [
             PathJoinSubstitution([FindExecutable(name="xacro")]),
             " ",
-            PathJoinSubstitution([FindPackageShare(description_package), "urdf", description_file]),
+            PathJoinSubstitution(robot_description_file),
             " ",
             "robot_ip:=",
             robot_ip,
@@ -150,16 +161,18 @@ def launch_setup(context, *args, **kwargs):
             "trajectory_port:=",
             trajectory_port,
             " ",
+            "parent:=",
+            parent,
+            " ",
         ]
     )
-    robot_description = {"robot_description": robot_description_content}
+    system_config_parser = SystemConfigParser()
+    robot_description = {"robot_description": system_config_parser.get_processed_urdf()}
 
-    
     initial_joint_controllers = PathJoinSubstitution(
         [FindPackageShare(runtime_config_package), "config", controllers_file]
     )
     
-
     rviz_config_file = PathJoinSubstitution(
         [FindPackageShare(description_package), "rviz", "view_robot.rviz"]
     )
@@ -185,7 +198,6 @@ def launch_setup(context, *args, **kwargs):
         condition=IfCondition(use_fake_hardware),
     )
 
-    
     eli_control_node = Node(
         package="eli_cs_robot_driver",
         executable="eli_ros2_control_node",
@@ -230,17 +242,11 @@ def launch_setup(context, *args, **kwargs):
         package="robot_state_publisher",
         executable="robot_state_publisher",
         output="both",
-        parameters=[robot_description],
+        parameters=[
+            robot_description,
+        ],
     )
 
-    rviz_node = Node(
-        package="rviz2",
-        condition=IfCondition(launch_rviz),
-        executable="rviz2",
-        name="rviz2",
-        output="log",
-        arguments=["-d", rviz_config_file],
-    )
 
     # Spawn controllers
     def controller_spawner(name, active=True):
@@ -264,15 +270,13 @@ def launch_setup(context, *args, **kwargs):
         "speed_scaling_state_broadcaster",
         "force_torque_sensor_broadcaster",
     ]
-    controller_spawner_inactive_names = ["forward_position_controller"]
+    controller_spawner_inactive_names = [
+        "servo_controller", "forward_position_controller"]
 
     controller_spawners = [controller_spawner(name) for name in controller_spawner_names] + [
         controller_spawner(name, active=False) for name in controller_spawner_inactive_names
     ]
     
-    
-
-      
     # There may be other controllers of the joints, but this is the initially-started one
     initial_joint_controller_spawner_started = Node(
         package="controller_manager",
@@ -300,18 +304,16 @@ def launch_setup(context, *args, **kwargs):
         condition=UnlessCondition(activate_joint_controller),
     )
     
-
     nodes_to_start = [
         control_node,
         eli_control_node,
         components_loader,
-        # tool_communication_node,
         controller_stopper_node,
         robot_state_publisher_node,
-        rviz_node,
         initial_joint_controller_spawner_stopped,
         initial_joint_controller_spawner_started,
-    ] + controller_spawners
+  ] + controller_spawners
+
 
     return nodes_to_start
 
@@ -323,7 +325,7 @@ def generate_launch_description():
         DeclareLaunchArgument(
             "cs_type",
             description="Type/series of used Elite robot CS series.",
-            choices=[ "cs63", "cs66", "cs612", "cs616", "cs620", "cs625"],
+            choices=["cs63", "cs66", "cs612", "cs612s2", "cs616", "cs620", "cs625"],
         )
     )
     declared_arguments.append(
@@ -521,4 +523,19 @@ def generate_launch_description():
             description="Port that will be opened for trajectory control.",
         )
     )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "parent",
+            default_value="world",
+            description="Link that the arm is attached to.",
+        )
+    )
+    declared_arguments.append(
+        DeclareLaunchArgument(
+            "custom_xacro_path",
+            default_value="",
+            description="Path to the custom xacro, relative to a package.",
+        )
+    )
+
     return LaunchDescription(declared_arguments + [OpaqueFunction(function=launch_setup)])
