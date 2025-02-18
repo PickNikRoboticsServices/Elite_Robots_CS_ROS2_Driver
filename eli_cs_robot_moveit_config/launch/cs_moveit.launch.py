@@ -173,6 +173,7 @@ def launch_setup(context, *args, **kwargs):
         package="moveit_ros_move_group",
         executable="move_group",
         output="screen",
+        # arguments=["--ros-args", "--log-level", "DEBUG"],
         parameters=[
             robot_description,
             robot_description_semantic,

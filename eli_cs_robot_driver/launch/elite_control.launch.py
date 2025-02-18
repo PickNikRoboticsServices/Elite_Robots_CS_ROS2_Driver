@@ -299,7 +299,7 @@ def launch_setup(context, *args, **kwargs):
         robot_state_publisher_node,
         initial_joint_controller_spawner_stopped,
         initial_joint_controller_spawner_started,
-    ] + controller_spawners
+  ] + controller_spawners
 
 
     return nodes_to_start
