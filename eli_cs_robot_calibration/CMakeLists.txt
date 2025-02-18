@@ -8,12 +8,14 @@ endif()
 # find dependencies
 find_package(ament_cmake REQUIRED)
 find_package(rclcpp REQUIRED)
-find_package(elite-cs-series-sdk 1.1.0 REQUIRED)
+find_package(elite_robot_client 1.1.0 REQUIRED)
 find_package(Eigen3 REQUIRED)
 find_package(yaml-cpp REQUIRED)
 
 set(YAML_CPP_INCLUDE_DIRS ${YAML_CPP_INCLUDE_DIR})
 
+link_directories("/usr/local/lib/")
+include_directories("/usr/local/include")
 add_library(calibration
   src/calibration.cpp
   src/calibration_consumer.cpp
@@ -27,7 +29,7 @@ target_include_directories(
 )
 target_link_libraries(
   calibration
-  elite-cs-series-sdk
+  elite_robot_client
   ${YAML_CPP_LIBRARIES}
 )
 ament_target_dependencies(calibration
@@ -42,6 +44,7 @@ target_include_directories(calibration_correction
     include
 )
 target_link_libraries(calibration_correction
+  elite_robot_client
   calibration
 )
 

@@ -16,7 +16,7 @@
 
 #include <std_srvs/srv/trigger.hpp>
 #include <controller_interface/controller_interface.hpp>
-#include <gpio_controller_parameters.hpp>
+#include <eli_cs_controllers/gpio_controller_parameters.hpp>
 #include <rclcpp/duration.hpp>
 #include <rclcpp/time.hpp>
 #include <std_msgs/msg/bool.hpp>
@@ -61,10 +61,10 @@ private:
         TOOL_DIG_IN = CONFIGURE_DIG_IN + CONF_DIG_GPIO_NUM,
         STANDARD_ANALOG_OUT_TYPE1 = TOOL_DIG_IN + TOOL_DIG_GPIO_NUM,
         STANDARD_ANALOG_OUT1,
-        STANDARD_ANALOG_OUT_TYPE2,
-        STANDARD_ANALOG_OUT2,
         STANDARD_ANALOG_IN_TYPE1,
         STANDARD_ANALOG_IN1,
+        STANDARD_ANALOG_OUT_TYPE2,
+        STANDARD_ANALOG_OUT2,
         STANDARD_ANALOG_IN_TYPE2,
         STANDARD_ANALOG_IN2,
         TOOL_MODE,
