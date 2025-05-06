@@ -17,6 +17,9 @@ controller_manager:
 
     forward_velocity_controller:
       type: velocity_controllers/JointGroupVelocityController
+
+    velocity_force_controller:
+      type: velocity_force_controller/VelocityForceController
     
     io_and_status_controller:
       type: eli_cs_controllers/GPIOController
@@ -26,9 +29,6 @@ controller_manager:
 
     scaled_joint_trajectory_controller:
       type: eli_cs_controllers/ScaledJointTrajectoryController
-
-    velocity_force_controller:
-      type: velocity_force_controller/VelocityForceController
 
 force_torque_sensor_broadcaster:
   ros__parameters:
@@ -168,10 +168,10 @@ velocity_force_controller:
     # Base frame of the kinematic chain, for computation of arm kinematics.
     base_frame: base_link
     # The tip link of the kinematic chain, i.e. the frame that will be controlled.
-    ee_frame: tool0
+    ee_frame: grasp_link
     # The frame where the force / torque sensor reading is given.
     # (Needs to exist in the kinematic chain).
-    sensor_frame: tool0
+    sensor_frame: fts_link
     # The force/torque ros2_control hardware interface name.
     ft_sensor_name: tcp_fts_sensor
     # An optional deadband to apply to the force/torque signal. Set to 0.0 to disable.
